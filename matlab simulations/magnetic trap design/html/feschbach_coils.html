@@ -1,0 +1,269 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN">
+<html xmlns:mwsh="http://www.mathworks.com/namespace/mcode/v1/syntaxhighlight.dtd">
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   
+      <!--
+This HTML is auto-generated from an M-file.
+To make changes, update the M-file and republish this document.
+      -->
+      <title>feschbach_coils</title>
+      <meta name="generator" content="MATLAB 7.4">
+      <meta name="date" content="2008-09-12">
+      <meta name="m-file" content="feschbach_coils"><style>
+
+body {
+  background-color: white;
+  margin:10px;
+}
+
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows. */ 
+p,h1,h2,div.content div {
+  max-width: 600px;
+  /* Hack for IE6 */
+  width: auto !important; width: 600px;
+}
+
+pre.codeinput {
+  background: #EEEEEE;
+  padding: 10px;
+}
+@media print {
+  pre.codeinput {word-wrap:break-word; width:100%;}
+} 
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.codeoutput {
+  color: #666666;
+  padding: 10px;
+}
+
+pre.error {
+  color: red;
+}
+
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+  </style></head>
+   <body>
+      <div class="content"><pre class="codeinput">clear
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%Magnetic trap calculation</span>
+<span class="comment">% B field of an antihelmholtz coil</span>
+<span class="comment">% BrzAH(r, z0, I, a, coil, Z)</span>
+<span class="comment">% r is the starting (smaller) radius of the coil loop given in cm</span>
+<span class="comment">% z0 is the location of the center of the loop in cm</span>
+<span class="comment">% I is current in A</span>
+<span class="comment">% a is the cross section</span>
+<span class="comment">%coil is an array specifying the geometry of the coil baised on number of</span>
+<span class="comment">%turns in each layer.</span>
+<span class="comment">%Z specifies the rectangular volum in which the B-field in going to be</span>
+<span class="comment">%calculated. The filed is calculated along the z and y axis. By symmetry</span>
+<span class="comment">%B_y=B_x.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%------------------- constants --------------------------------------------</span>
+cm = 1;
+inch = 2.54 * cm;
+<span class="comment">%------------------- coil parameters --------------------------------------</span>
+a = 0.35+ 0.01*inch;                        <span class="comment">%coil dimension in + extra spacing for epoxy etc(cm)</span>
+I =410;                                      <span class="comment">%current through coils (A)</span>
+coil = [4,4,4,4];                           <span class="comment">%coil configuration. from inner set to outer</span>
+<span class="comment">%center of chamber is at 3.47''</span>
+<span class="comment">%Bucket depth 2.99"</span>
+<span class="comment">%3.47-2.99=0.48" is the distance of the chamber center from bucket lower</span>
+<span class="comment">%surface. We also assume that the metal disk around the window is not</span>
+<span class="comment">%thiner than 0.118"=0.2997 cm.</span>
+z = 0.48*inch + 1. + a*coil(1)/2;           <span class="comment">%Center of mass height for coil (cm)</span>
+r = 2*z-length(coil)*a/2 + a/2;             <span class="comment">%Inner coil radius (cm)</span>
+z0=z - a*coil(1)/2+a/2;                     <span class="comment">%First coil height</span>
+
+fprintf(<span class="string">'\r\t coil separation = %0.4f inch\r\tcoil inner diameter = %0.4f inch\r'</span>,(z0*2-a)/inch,2*(r-a/2)/inch);
+
+coil_outer_radius = (r + a*length(coil)-a/2)/inch;
+coil_height = a*coil(1)/inch;
+fprintf(<span class="string">'\r\tcoil outer diameter= %0.5f inch\r\tcoil_height = %0.5f inch\r'</span>,coil_outer_radius*2,coil_height);
+
+Z = [-10, 10];                             <span class="comment">%region of interest to calculate B-field</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+z = Z(1):0.1:Z(2);
+N = length(z);
+N2 = round(N/2);
+Bz_u = zeros(N,3);
+Bz_d = zeros(N,3);
+By_u = zeros(N,3);
+By_d = zeros(N,3);
+NN = length(coil);
+R = 0;                                       <span class="comment">%last coil radius to be calculated</span>
+
+drz = a;
+
+<span class="keyword">for</span> k=1:NN
+    rk = r + (k-1)*drz;
+    <span class="keyword">for</span> j=1:coil(k)
+        zj = z0 + (j-1)*drz;
+        R=R+2*pi*rk;                        <span class="comment">%calculating total coil length</span>
+        <span class="keyword">for</span> i=1:N
+            Bz_u(i,:) = Bz_u(i,:) + B_loopN([0 0 z(i)], zj, rk, I);
+            By_u(i,:) = By_u(i,:) + B_loopN([0 z(i) 0], zj, rk, I);
+            Bz_d(i,:) = Bz_d(i,:) + B_loopN([0 0 z(i)], -zj, rk, I);
+            By_d(i,:) = By_d(i,:) + B_loopN([0 z(i) 0], -zj, rk, I);
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+fprintf(<span class="string">'\rcoil length = %0.4f cm\r\t\t'</span>,R);
+
+Bz = abs( Bz_u(N2:N,3) + Bz_d(N2:N,3) );   <span class="comment">%total B-field in the z- direction</span>
+By = abs( By_u(N2:N,2) + By_d(N2:N,2) );   <span class="comment">%total B-field in the x and y directions</span>
+Gz = mean( gradient(Bz,1) );    <span class="comment">% average gradient in Z direction</span>
+Gr = mean( gradient(By,1) );    <span class="comment">% average gradient in X,Y directions</span>
+<span class="comment">%</span>
+<span class="comment">% Plots B as function of z and y (plane)</span>
+<span class="comment">%</span>
+plot( z(:), ( Bz_u(:,3) + Bz_d(:,3) ), <span class="string">'.-b'</span>, z(:), ( By_u(:,2) + By_d(:,2) ), <span class="string">'-r'</span>)
+ylabel(<span class="string">'B (gauss)'</span>); xlabel(<span class="string">'r,z (cm)'</span>);
+title(<span class="string">'Coil B field along the r (red) and z (blue) direction for helmholts coils'</span>);
+
+<span class="comment">%-------------------------- power requierments ----------------------------</span>
+id=inch/16;                        <span class="comment">% square inner size of the copper tube for the 1/8" tube</span>
+a_conducting=inch/8;               <span class="comment">% Conducting part of the wire</span>
+r0 = 1.7e-6;                       <span class="comment">% copper wire resistance at room temperature (ohms*cm)</span>
+Lc = 2*R+400/12+1600/12;           <span class="comment">% coils full length (winding + water circuit connections)</span>
+R0 = r0*Lc/(a_conducting^2-id^2);  <span class="comment">% coils total resistance</span>
+V0 = R0*I;                         <span class="comment">% voltage drop per coil</span>
+P0 = R0*I^2;                       <span class="comment">% voltage drop on the coils at room temperature</span>
+Vigbt=5; Vlds=1; Vxtra=.4;         <span class="comment">% extra voltage drops in the system</span>
+Vt = V0 + Vigbt + Vlds + Vxtra;    <span class="comment">% total voltage drop in the system</span>
+Pt = Vt*I;                         <span class="comment">% total power to be dissipated (T corrected)</span>
+<span class="comment">%</span>
+fprintf(<span class="string">'\rRc = %0.4f ohms\r\t\tVt = %0.1f V\r\t\tPc = %1.3f kW\r'</span>,R0,Vt,Pt/1000);
+<span class="comment">%</span>
+</pre><pre class="codeoutput">	 coil separation = 1.7474 inch	coil inner diameter = 4.0860 inch	coil outer diameter= 5.26835 inch	coil_height = 0.59118 inchcoil length = 597.1539 cm		Rc = 0.0306 ohms		Vt = 18.9 V		Pc = 7.768 kW</pre><img vspace="5" hspace="5" src="feschbach_coils_01.png"> <p class="footer"><br>
+            Published with MATLAB&reg; 7.4<br></p>
+      </div>
+      <!--
+##### SOURCE BEGIN #####
+clear
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH 
+%Magnetic trap calculation
+% B field of an antihelmholtz coil 
+% BrzAH(r, z0, I, a, coil, Z) 
+% r is the starting (smaller) radius of the coil loop given in cm
+% z0 is the location of the center of the loop in cm
+% I is current in A
+% a is the cross section
+%coil is an array specifying the geometry of the coil baised on number of
+%turns in each layer.
+%Z specifies the rectangular volum in which the B-field in going to be
+%calculated. The filed is calculated along the z and y axis. By symmetry
+%B_y=B_x.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH- constants REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+cm = 1;
+inch = 2.54 * cm;
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH- coil parameters REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+a = 0.35+ 0.01*inch;                        %coil dimension in + extra spacing for epoxy etc(cm)
+I =410;                                      %current through coils (A)
+coil = [4,4,4,4];                           %coil configuration. from inner set to outer
+%center of chamber is at 3.47''
+%Bucket depth 2.99"
+%3.47-2.99=0.48" is the distance of the chamber center from bucket lower
+%surface. We also assume that the metal disk around the window is not
+%thiner than 0.118"=0.2997 cm. 
+z = 0.48*inch + 1. + a*coil(1)/2;           %Center of mass height for coil (cm)
+r = 2*z-length(coil)*a/2 + a/2;             %Inner coil radius (cm)
+z0=z - a*coil(1)/2+a/2;                     %First coil height
+
+fprintf('\r\t coil separation = %0.4f inch\r\tcoil inner diameter = %0.4f inch\r',(z0*2-a)/inch,2*(r-a/2)/inch);
+
+coil_outer_radius = (r + a*length(coil)-a/2)/inch;
+coil_height = a*coil(1)/inch;
+fprintf('\r\tcoil outer diameter= %0.5f inch\r\tcoil_height = %0.5f inch\r',coil_outer_radius*2,coil_height);
+
+Z = [-10, 10];                             %region of interest to calculate B-field
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+z = Z(1):0.1:Z(2); 
+N = length(z); 
+N2 = round(N/2);
+Bz_u = zeros(N,3); 
+Bz_d = zeros(N,3);
+By_u = zeros(N,3); 
+By_d = zeros(N,3);
+NN = length(coil); 
+R = 0;                                       %last coil radius to be calculated
+
+drz = a;                                     
+
+for k=1:NN
+    rk = r + (k-1)*drz;
+    for j=1:coil(k)
+        zj = z0 + (j-1)*drz;
+        R=R+2*pi*rk;                        %calculating total coil length
+        for i=1:N
+            Bz_u(i,:) = Bz_u(i,:) + B_loopN([0 0 z(i)], zj, rk, I);
+            By_u(i,:) = By_u(i,:) + B_loopN([0 z(i) 0], zj, rk, I);
+            Bz_d(i,:) = Bz_d(i,:) + B_loopN([0 0 z(i)], -zj, rk, I);
+            By_d(i,:) = By_d(i,:) + B_loopN([0 z(i) 0], -zj, rk, I);
+        end
+    end
+           
+end
+
+fprintf('\rcoil length = %0.4f cm\r\t\t',R);
+
+Bz = abs( Bz_u(N2:N,3) + Bz_d(N2:N,3) );   %total B-field in the z- direction
+By = abs( By_u(N2:N,2) + By_d(N2:N,2) );   %total B-field in the x and y directions
+Gz = mean( gradient(Bz,1) );    % average gradient in Z direction
+Gr = mean( gradient(By,1) );    % average gradient in X,Y directions
+%
+% Plots B as function of z and y (plane)
+%
+plot( z(:), ( Bz_u(:,3) + Bz_d(:,3) ), '.-b', z(:), ( By_u(:,2) + By_d(:,2) ), '-r')
+ylabel('B (gauss)'); xlabel('r,z (cm)'); 
+title('Coil B field along the r (red) and z (blue) direction for helmholts coils');
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH power requierments REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+id=inch/16;                        % square inner size of the copper tube for the 1/8" tube
+a_conducting=inch/8;               % Conducting part of the wire
+r0 = 1.7e-6;                       % copper wire resistance at room temperature (ohms*cm)
+Lc = 2*R+400/12+1600/12;           % coils full length (winding + water circuit connections)
+R0 = r0*Lc/(a_conducting^2-id^2);  % coils total resistance
+V0 = R0*I;                         % voltage drop per coil
+P0 = R0*I^2;                       % voltage drop on the coils at room temperature
+Vigbt=5; Vlds=1; Vxtra=.4;         % extra voltage drops in the system
+Vt = V0 + Vigbt + Vlds + Vxtra;    % total voltage drop in the system
+Pt = Vt*I;                         % total power to be dissipated (T corrected)
+%
+fprintf('\rRc = %0.4f ohms\r\t\tVt = %0.1f V\r\t\tPc = %1.3f kW\r',R0,Vt,Pt/1000);
+%
+##### SOURCE END #####
+-->
+   </body>
+</html>

@@ -1,0 +1,225 @@
+%
+%  Aviv Keshet, 2010/2011
+%  Design of magnetic trap for new BEC2 machine.
+%  Simulated magnetic field in quadrupole and bias configurations
+%  Calculates water flow rates and water temperature rise.
+
+
+clear
+Delta = .1;
+
+
+%------------------- constants --------------------------------------------
+cm = 1;
+inch = 2.54 * cm;
+%------------------- coil parameters --------------------------------------
+a = 0.35+ 0.015*inch;                           %coil dimension in + extra spacing for epoxy etc(cm)
+%I =9.635;                                       %current through coils (A)
+I=500
+
+% if 1, current configuration for Feshbach will be calculated separately
+% from current configuration for magtrap, ie using a different set of
+% currents (coil-dependant current)
+useDifferentCurrentsForFeshbach=0;
+
+calculateFields = 1;
+
+
+%% Set up the coil configuration to calculate
+if (0)
+    %helmholtz configuration for 2.3 inch inner diameter, 4 layers of 5 turns
+    %each
+    coil = [5,5,5,5];                               %coil configuration. from inner set to outer
+    z_inner = 0.38 * inch  
+    d_inner = 2.3 * inch
+elseif (0) 
+    % helmholt configuration for 2.3inch inner diameter, 4 layers of 3
+    % turns
+    coil = [3,3,3,3];                               %coil configuration. from inner set to outer
+    z_inner = 0.49 * inch  
+    d_inner = 2.3 * inch
+elseif (0)
+    coil = [4,4,4,4,4,4];                               %coil configuration. from inner set to outer
+    z_inner = 0.475 * inch  
+    d_inner = 2.3 * inch
+elseif (0)
+    
+    useDifferentCurrentsForFeshbach=1;
+    
+    layerCurrents = [0, 0, 0,0,0,0,I,I,I,I];
+    coil = [4,4,4,4,4,4,4,4,4,4];
+    z_inner = .949 * inch;
+    d_inner = 2.3*inch;
+elseif (0)
+    
+    calculateFields=0;
+    
+    useDifferentCurrentsForFeshbach=1;
+    
+    layerCurrents = [-I/17.13, -I/17.13,0,0,0,0,I,I,I,I];
+    coil = [4,4,4,4,4,4,4,4,4,4];
+    z_inner = .949 * inch;
+    d_inner = 2.3*inch;
+elseif (1)
+    
+    calculateFields=1;
+    
+    useDifferentCurrentsForFeshbach=1;
+    
+    layerCurrents = [I/20, I/20,0,0,0,0,I,I,I,I];
+    coil = [7,7,6,6,5,5,4,4,3,3];
+    z_inner = 4.566/2; %cm
+    d_inner = 6.54; %cm
+end
+
+d_outer = d_inner + length(coil) * a * 2
+
+
+
+%% Calculate B-Field from coil
+
+Z = [-10, 10];                             %region of interest to calculate B-field
+
+z = Z(1):Delta:Z(2); 
+N = length(z); 
+N2 = round(N/2);
+
+%fields during magtrap
+Bz_u = zeros(N,3); %field due to upper coil, as a function of z
+Bz_d = zeros(N,3); %field due to lower coil, as a function of z
+By_u = zeros(N,3); %field due to upper coil, as a function of y
+By_d = zeros(N,3); %field due to lower coil, as a function of y
+
+%fields during feshbach
+if (useDifferentCurrentsForFeshbach)
+    fBz_u = zeros(N,3); %field due to upper coil, as a function of z
+    fBz_d = zeros(N,3); %field due to lower coil, as a function of z
+    fBy_u = zeros(N,3); %field due to upper coil, as a function of y
+    fBy_d = zeros(N,3); %field due to lower coil, as a function of y
+end
+
+NN = length(coil); 
+R = 0;                                       %last coil radius to be calculated
+
+drz = a;                                     
+
+for k=1:NN
+    rk = (d_inner+a)/2 + (k-1)*drz; % radius of current-carrying wire for this layer
+    
+    layerLength(k) = 2 * pi * rk * coil(k);
+    
+    for j=1:coil(k)
+        zj = z_inner + a/2 + (j-1)*drz; % z displacement of 
+        R=R+2*pi*rk;                        %calculating total coil length  
+        
+        if (calculateFields)
+            for i=1:N
+                Bz_u(i,:) = Bz_u(i,:) + B_loopN([0 0 z(i)], zj, rk, I);
+                By_u(i,:) = By_u(i,:) + B_loopN([0 z(i) 0], zj, rk, I);
+                Bz_d(i,:) = Bz_d(i,:) + B_loopN([0 0 z(i)], -zj, rk, -I);
+                By_d(i,:) = By_d(i,:) + B_loopN([0 z(i) 0], -zj, rk, -I);
+
+                if (useDifferentCurrentsForFeshbach)
+                    fBz_u(i,:) = fBz_u(i,:) + B_loopN([0 0 z(i)], zj, rk, layerCurrents(k));
+                    fBy_u(i,:) = fBy_u(i,:) + B_loopN([0 z(i) 0], zj, rk, layerCurrents(k));
+                    fBz_d(i,:) = fBz_d(i,:) + B_loopN([0 0 z(i)], -zj, rk, -layerCurrents(k));
+                    fBy_d(i,:) = fBy_d(i,:) + B_loopN([0 z(i) 0], -zj, rk, -layerCurrents(k));
+                end
+
+            end
+        end
+    end
+           
+end
+
+if (useDifferentCurrentsForFeshbach==0)
+    fBz_u = Bz_u; 
+    fBz_d = Bz_d; 
+    fBy_u = By_u;
+    fBy_d = By_d; 
+end
+
+fprintf('\rcoil length = %0.4f cm\r\t\t',R);
+
+
+%% Plot of Mag-trap gradient field
+if (calculateFields)
+    Bz = abs( Bz_u(:,3)+ Bz_d(:,3));
+    By = abs( By_u(:,2) + By_d(:,2));
+
+    plot (z, Bz, '-b', z, By, '-r');
+    ylabel('B-field (G)');
+    xlabel('Position (r or z) (cm)');
+    
+    gradient_axial = abs(Bz(N2)-Bz(N2+1))/Delta;
+    gradient_radial = abs(By(N2)-By(N2+1))/Delta;
+    
+    legend (strcat('Axial Gradient: ', num2str(gradient_axial), ' G/cm'), strcat('Radial Gradient: ', num2str(gradient_radial), ' G/cm'));
+    title('Magnetic Trap -- Gradient Fields at 500 Amps');
+    
+end
+
+%% Plot of Feshbach fields
+
+if (calculateFields)
+    figure
+    fBz = abs( fBz_u(:,3) - fBz_d(:,3) );
+    fBy = abs( fBy_u(:,3) - fBy_d(:,3));
+    
+    plot (z, fBz, '-b', z, fBy, '-r');
+    ylabel('B-field (G)');
+    xlabel('Position (r or z) (cm)');
+    
+    curv_axial =  abs( fBz(N2)- 2 * fBz(N2+1) + fBz(N2+2)) / (Delta^2);
+    curv_radial = abs( fBy(N2)- 2 * fBy(N2+1) + fBz(N2+2)) / (Delta^2);
+    
+    legend (strcat('Axial curvature ', num2str(curv_axial), ' G/cm^2'), strcat('Radial curvature: ', num2str(curv_radial), ' G/cm^2'));
+    title('Axial Feshbach Field at 500 Amps');
+    
+    curv_axial
+    relative_curv_axial = curv_axial / fBz(N2);
+    relative_curv_axial
+end
+
+
+
+%% Power requirements
+
+for i=1:(length(coil)/2)
+    layerPairLength(i) = layerLength(2*i-1) + layerLength(2*i);
+end
+
+layerPairLength
+
+totalLength = sum(layerPairLength);
+totalLength
+
+wire_id = inch * 1/16;
+wire_od = inch * 1/8;
+rho = 1.7e-6; % copper room temperature resisitivity ohm * cm
+r_per_length = rho / (wire_od^2 - wire_id^2);
+% (calculated value here is 2.25 mOhm / m, 
+% empirical value from Erik streed is 2.65 mOhm/m)
+
+layerPairPower = r_per_length * layerPairLength * I^2;
+layerPairPower
+totalPowerPerCoil = sum(layerPairPower);
+totalPowerPerCoil
+
+
+%% Water flow
+% Erik Streed Thesis
+% Q = 2.07 (P/L)^1/2
+% where Q is flow rate in mL/s, P is pressure drop in psi, L is length in
+% meters
+% This is emperically measured for the 1/8th inch hollow core coil wire
+
+flowRatesPerPair = 2.07 * (240./(layerPairLength/100)).^(1/2);
+flowRatesPerPair
+
+%flowRatesPerPair has units of mL/s, equivalent to g/s
+
+% water specific heat 4.19 J/(g K)
+
+temperatureRisePerPair = layerPairPower./flowRatesPerPair / 4.19;
+temperatureRisePerPair
