@@ -1,0 +1,68 @@
+
+Received: by 10.151.117.8 with HTTP; Mon, 27 Oct 2008 17:16:13 -0700 (PDT)
+Message-ID: <e1afe8f00810271716o5e05a989l45b7c73ea4f9f018@mail.gmail.com>
+Date: Mon, 27 Oct 2008 20:16:13 -0400
+From: "Aviv Keshet" <akeshet@gmail.com>
+To: dking@ancorp.com
+Subject: Quote request for custom vacuum parts
+MIME-Version: 1.0
+Content-Type: multipart/mixed; 
+	boundary="----=_Part_35616_8115244.1225152973632"
+Delivered-To: akeshet@gmail.com
+
+------=_Part_35616_8115244.1225152973632
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+
+I would like to request a quote for a number of custom vacuum parts.
+These parts are duplicates of parts which we have previously purchased
+from you under quote number 04931 from back in August of 2004, though
+we are not buying duplicates of all of the parts on that quote. The
+person requesting the quote at the time was Jit Kee Chin, who has
+since graduated from the group. I will repeat a description of the
+parts here:
+
+We require a custom non-standard knife edge. Standard conflat flanges
+have a 0.026" distance between the plane of the tip of the knife edge
+and the end plane of the flange ("recession"). However, for our
+application, we require custom flanges that have 0.021" recession. I
+have attached a drawing giving a depiction of what I mean.
+
+*All the parts below must have the custom knife edge on unless
+indicated otherwise.*
+
+Quantity 2 of
+90 degree 2.75" CFF elbow in 316SS, with rotatable flanges
+
+Quantity 2 of
+2.75" CFF tee in 316SS. Two flanges rotatable, one not. One of the
+rotatable flanges is in the vertical leg of the tee, the other in the
+horizontal span of the tee.
+
+Quantity 4 of
+2.75" CFF double sided blank in 316SS, 0.5" thick
+
+Quantity 4 of
+2.75" CFF half-nipple, capped, with non-rotatable flange, in 316SS.
+The half-nipple should be terminated with a 0.25" thick SS plate, and
+the welding should be done such that the 1.5" diameter of the tube is
+not increased. See attached drawing.
+
+Quantity 2 of
+2.75" CFF to 4.5" CFF conical adapter in 316SS. The 4.5" end should
+have a standard knife edge, the 2.75" end should have the custom knife
+edge described above.
+
+
+
+Thank you,
+
+Aviv Keshet
+Graduate Research Assistant,
+MIT Department of Physics
+77 Massachusetts Ave, Room 26-259
+Cambridge, MA 02139
+
+(617)-253-5926
