@@ -1,0 +1,1 @@
+The main file with slower simulation is Revised_New_zeeman_design.m
