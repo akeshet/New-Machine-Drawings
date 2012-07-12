@@ -65,8 +65,8 @@ elseif (1)
     calculateFields=1;
     
     useDifferentCurrentsForFeshbach=1;
-    
-    layerCurrents = [I/20, I/20,0,0,0,0,I,I,I,I];
+    sc = -36.88;
+    layerCurrents = [sc,sc,sc,sc,I,I,I,I,I,I];
     coil = [7,7,6,6,5,5,4,4,3,3];
     z_inner = 4.566/2; %cm
     d_inner = 6.54; %cm

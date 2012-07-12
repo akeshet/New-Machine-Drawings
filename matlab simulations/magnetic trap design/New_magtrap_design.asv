@@ -1,3 +1,10 @@
+%
+%  Aviv Keshet, 2010/2011
+%  Design of magnetic trap for new BEC2 machine.
+%  Simulated magnetic field in quadrupole and bias configurations
+%  Calculates water flow rates and water temperature rise.
+
+
 clear
 Delta = .1;
 
@@ -6,7 +13,7 @@ Delta = .1;
 cm = 1;
 inch = 2.54 * cm;
 %------------------- coil parameters --------------------------------------
-a = 0.35+ 0.015*inch;                           %wire thickness + extra spacing for epoxy etc(cm)
+a = 0.35+ 0.015*inch;                           %coil dimension in + extra spacing for epoxy etc(cm)
 %I =9.635;                                       %current through coils (A)
 I=500
 
@@ -58,11 +65,11 @@ elseif (1)
     calculateFields=1;
     
     useDifferentCurrentsForFeshbach=1;
-    
-    layerCurrents = [I/20, I/20,0,0,0,0,I,I,I,I]; % currents for Feshbach field
+    sc = I / 23.105
+    layerCurrents = [I/23.105, I/23.105,0,0,0,0,I,I,I,I];
     coil = [7,7,6,6,5,5,4,4,3,3];
-    z_inner = 4.566/2;                            %distance from inside flat side of coil to atom cloud, cm
-    d_inner = 6.54;                               %inner clear diameter of coil, cm
+    z_inner = 4.566/2; %cm
+    d_inner = 6.54; %cm
 end
 
 d_outer = d_inner + length(coil) * a * 2
